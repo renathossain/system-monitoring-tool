@@ -1,2 +1,2 @@
 # system-monitoring-tool
-Assignment 1 for B09
+Report different metrics of the system resource utilization.
