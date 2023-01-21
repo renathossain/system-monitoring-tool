@@ -48,19 +48,37 @@ void print_line() {
 	printf("---------------------------------------\n");
 }
 
+void display_memory() {
+	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
+        sysinfo(info);
+        printf("%lu\n", info -> totalram);
+}
+
+void display_no_of_cores() {
+	;
+}
+
+void display_sysinfo() {
+	struct utsname *buf = (struct utsname *)malloc(sizeof(struct utsname));
+        uname(buf);
+        printf("### System Information ###\n");
+	printf("System Name = %s\n", buf -> sysname);
+        printf("Machine Name = %s\n", buf -> nodename);
+        printf("Version Name = %s\n", buf -> version);
+        printf("Release = %s\n", buf -> release);
+        printf("Architecture = %s\n", buf -> machine);
+}
+
 void display(int no_of_samples, int delay) {
 	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
 	printf(" Memory usage: 4092 kilobytes\n");
+	display_memory();
 	print_line();
 	print_line();
 	print_line();
-	
+	display_no_of_cores();
 	print_line();
-	
-	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
-	sysinfo(info);
-	printf("%lu\n", info -> totalram);
-	
+	display_sysinfo();
 	print_line();
 }
 
