@@ -48,14 +48,34 @@ void print_line() {
 	printf("---------------------------------------\n");
 }
 
-void display_memory() {
+void display_beginning(int no_of_samples, int delay) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
-        printf("%lu\n", info -> totalram);
+	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
+        printf(" Memory usage: 4092 kilobytes\n");
+        printf("Total ram: %lu\n", info -> totalram);
+	free(info);
+}
+
+void display_memory() {
+	printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
+}
+
+void display_session() {
+	struct utmp *users = (struct utmp *)malloc(sizeof(struct utmp));
+	printf("### Sessions/users ###\n");
+	free(users);
 }
 
 void display_no_of_cores() {
-	;
+	FILE *file = fopen("/proc/cpuinfo", "r");
+	if(file == NULL) {
+		printf("/proc/cpuinfo cannot be opened\n");
+		return;
+	}
+	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
+	printf(" total cpu use = \n");
+	fclose(file);
 }
 
 void display_sysinfo() {
@@ -67,14 +87,15 @@ void display_sysinfo() {
         printf("Version Name = %s\n", buf -> version);
         printf("Release = %s\n", buf -> release);
         printf("Architecture = %s\n", buf -> machine);
+	free(buf);
 }
 
 void display(int no_of_samples, int delay) {
-	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
-	printf(" Memory usage: 4092 kilobytes\n");
+	display_beginning(no_of_samples, delay);
+	print_line();
 	display_memory();
 	print_line();
-	print_line();
+	display_session();
 	print_line();
 	display_no_of_cores();
 	print_line();
