@@ -48,34 +48,43 @@ void print_line() {
 	printf("---------------------------------------\n");
 }
 
-void display_beginning(int no_of_samples, int delay) {
-	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
-        sysinfo(info);
+void display_memory(int no_of_samples, int delay) {
 	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
-        printf(" Memory usage: 4092 kilobytes\n");
-        printf("Total ram: %lu\n", info -> totalram);
+	struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
+	getrusage(RUSAGE_SELF, usage);
+        printf(" Memory usage: %ld kilobytes\n", usage -> ru_maxrss);
+	free(usage);
+	print_line();
+	printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
+	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
+	sysinfo(info);
+	for(int i = 0; i < no_of_samples; i++) {
+		float totalram = ((float)info -> totalram / info -> mem_unit) / 1073741824;
+		float freeram = ((float)info -> freeram / info -> mem_unit) / 1073741824;
+    		float totalswap = ((float)info -> totalswap / info -> mem_unit) / 1073741824;
+    		float freeswap = ((float)info -> freeswap / info -> mem_unit) / 1073741824;
+		float usedram = totalram - freeram;
+		float usedswap = totalswap - freeswap;
+		printf("%.2f GB / %.2f GB  -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
+		sleep((unsigned int)delay);
+	}
 	free(info);
 }
 
-void display_memory() {
-	printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
-}
-
 void display_session() {
-	struct utmp *users = (struct utmp *)malloc(sizeof(struct utmp));
 	printf("### Sessions/users ###\n");
+	setutent();
+	struct utmp *users = getutent();
+	while(users != NULL) {
+   		printf(" %s       %s (%s)\n", users -> ut_user, users -> ut_line, users -> ut_host);
+    		users = getutent();
+  	}
 	free(users);
 }
 
 void display_no_of_cores() {
-	FILE *file = fopen("/proc/cpuinfo", "r");
-	if(file == NULL) {
-		printf("/proc/cpuinfo cannot be opened\n");
-		return;
-	}
 	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
 	printf(" total cpu use = \n");
-	fclose(file);
 }
 
 void display_sysinfo() {
@@ -91,9 +100,7 @@ void display_sysinfo() {
 }
 
 void display(int no_of_samples, int delay) {
-	display_beginning(no_of_samples, delay);
-	print_line();
-	display_memory();
+	display_memory(no_of_samples, delay);
 	print_line();
 	display_session();
 	print_line();
