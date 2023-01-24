@@ -48,6 +48,15 @@ void print_line() {
 	printf("---------------------------------------\n");
 }
 
+int is_number(char *number) {
+	int result = 1;
+	while(*number != '\0') {
+		if(*number < 48 || *number > 57) result = 0;
+		number++;
+	}
+	return result;
+}
+
 void display_memory(int no_of_samples, int delay) {
 	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
 	struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
@@ -59,10 +68,10 @@ void display_memory(int no_of_samples, int delay) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
 	sysinfo(info);
 	for(int i = 0; i < no_of_samples; i++) {
-		float totalram = ((float)info -> totalram / info -> mem_unit) / 1073741824;
-		float freeram = ((float)info -> freeram / info -> mem_unit) / 1073741824;
-    		float totalswap = ((float)info -> totalswap / info -> mem_unit) / 1073741824;
-    		float freeswap = ((float)info -> freeswap / info -> mem_unit) / 1073741824;
+		float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
+		float freeram = ((float)(info -> freeram) / (info -> mem_unit)) / 1073741824;
+    		float totalswap = ((float)(info -> totalswap) / (info -> mem_unit)) / 1073741824;
+    		float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
 		float usedram = totalram - freeram;
 		float usedswap = totalswap - freeswap;
 		printf("%.2f GB / %.2f GB  -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
@@ -111,25 +120,38 @@ void display(int no_of_samples, int delay) {
 }
 
 int main(int argc, char **argv) {
+	int mode = 0; //0 - default, 1 - system, 2 - user
+	int graphics = 0; //0 - no graphics (default), 1 - use graphics
+	int sequential = 0; //0 - not sequential (default), 1 - sequential
+	int no_of_samples = 10; //default value
+	int delay = 1; //default value
+
 	if (argc == 1) {
 		display(10, 1);
 	} else if (argc == 2) {
-		printf("2 arguments\n");
 		if (strcmp(argv[1], "--system") == 0) {
-			printf("--system\n");
+			display(10, 1);
 		} else if (strcmp(argv[1], "--user") == 0) {
-			printf("--user\n");
+			display(10, 1);
 		} else if (strcmp(argv[1], "--graphics") == 0) {
-			printf("--graphics\n");
+			display(10, 1);
 		}  else if (strcmp(argv[1], "--sequential") == 0) {
-                        printf("--sequential\n");
-                }  else if (strcmp(argv[1], "--samples=N") == 0) {
-                        printf("--samples=N\n");
-                }  else if (strcmp(argv[1], "--tdelay=T") == 0) {
-                        printf("--tdelay=T\n");
+                        display(10, 1);
+                }  else if (strncmp(argv[1], "--samples=", 10) == 0 &&
+				*(argv[1] + 10) != '\0' &&
+				is_number(argv[1] + 10) == 1) {
+			display(atoi(argv[1] + 10), 1);
+                }  else if (strncmp(argv[1], "--tdelay=", 8) == 0 &&
+				*(argv[1] + 8) != '\0' && 
+				is_number(argv[1] + 8) == 1) {
+			display(10, atoi(argv[1] + 8));
                 } else {
 			printf("Invalid argument\n");
 		}
 	}
 	return 0;
 }
+
+// How many arguments can be at most passed to sysmon
+// system and user cannot be used at the same time
+
