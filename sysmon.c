@@ -7,6 +7,7 @@
 #include<sys/types.h>
 #include<utmp.h>
 #include<unistd.h>
+#include<ncurses.h>
 
 /*
 Nbr of samples: 10 -- every 1 secs
@@ -74,7 +75,7 @@ void display_memory(int no_of_samples, int delay) {
     		float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
 		float usedram = totalram - freeram;
 		float usedswap = totalswap - freeswap;
-		printf("%.2f GB / %.2f GB  -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
+		printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
 		sleep((unsigned int)delay);
 	}
 	free(info);
@@ -85,7 +86,7 @@ void display_session() {
 	setutent();
 	struct utmp *users = getutent();
 	while(users != NULL) {
-   		printf(" %s       %s (%s)\n", users -> ut_user, users -> ut_line, users -> ut_host);
+   		printf(" %-16s %s (%s)\n", users -> ut_user, users -> ut_line, users -> ut_host);
     		users = getutent();
   	}
 	free(users);
@@ -120,11 +121,11 @@ void display(int no_of_samples, int delay) {
 }
 
 int main(int argc, char **argv) {
-	int mode = 0; //0 - default, 1 - system, 2 - user
-	int graphics = 0; //0 - no graphics (default), 1 - use graphics
-	int sequential = 0; //0 - not sequential (default), 1 - sequential
-	int no_of_samples = 10; //default value
-	int delay = 1; //default value
+	// int mode = 0; //0 - default, 1 - system, 2 - user
+	// int graphics = 0; //0 - no graphics (default), 1 - use graphics
+	// int sequential = 0; //0 - not sequential (default), 1 - sequential
+	// int no_of_samples = 10; //default value
+	// int delay = 1; //default value
 
 	if (argc == 1) {
 		display(10, 1);
