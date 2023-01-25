@@ -128,45 +128,51 @@ void display(int no_of_samples, int delay) {
 	print_line();
 	for(int i = 0; i < no_of_samples; i++) {
 		update(no_of_samples, i);
-		sleep(1);
+		sleep(delay);
 	}
 	display_sysinfo();
 	print_line();
 }
 
 int main(int argc, char **argv) {
-	// int mode = 0; //0 - default, 1 - system, 2 - user
-	// int graphics = 0; //0 - no graphics (default), 1 - use graphics
-	// int sequential = 0; //0 - not sequential (default), 1 - sequential
-	// int no_of_samples = 10; //default value
-	// int delay = 1; //default value
+	int mode = 0; //0 - default, 1 - system, 2 - user
+	int graphics = 0; //0 - no graphics (default), 1 - use graphics
+	int sequential = 0; //0 - not sequential (default), 1 - sequential
+	int no_of_samples = 10; //default value
+	int delay = 1; //default value
+	int samples_changed = 0; // prevent multiple of the same arguments
+	int tdelay_changed = 0; // prevent multiple of the same arguments
 
-	if (argc == 1) {
-		display(10, 1);
-	} else if (argc == 2) {
-		if (strcmp(argv[1], "--system") == 0) {
-			display(10, 1);
-		} else if (strcmp(argv[1], "--user") == 0) {
-			display(10, 1);
-		} else if (strcmp(argv[1], "--graphics") == 0) {
-			display(10, 1);
-		}  else if (strcmp(argv[1], "--sequential") == 0) {
-                        display(10, 1);
-                }  else if (strncmp(argv[1], "--samples=", 10) == 0 &&
-				*(argv[1] + 10) != '\0' &&
-				is_number(argv[1] + 10) == 1) {
-			display(atoi(argv[1] + 10), 1);
-                }  else if (strncmp(argv[1], "--tdelay=", 8) == 0 &&
-				*(argv[1] + 8) != '\0' && 
-				is_number(argv[1] + 8) == 1) {
-			display(10, atoi(argv[1] + 8));
-                } else {
-			printf("Invalid argument\n");
+	if (2 <= argc && argc <= 6) {
+		for(int i = 1; i < argc; i++) {
+			if (strcmp(argv[i], "--system") == 0 && mode == 0) {
+				mode = 1;
+			} else if (strcmp(argv[i], "--user") == 0 && mode == 0) {
+				mode = 2;
+			} else if (strcmp(argv[i], "--graphics") == 0 && graphics == 0) {
+				graphics = 1;
+			}  else if (strcmp(argv[i], "--sequential") == 0 && sequential == 0) {
+                        	sequential = 1;
+                	}  else if (strncmp(argv[i], "--samples=", 10) == 0 &&
+					is_number(argv[i] + 10) == 1 &&
+					samples_changed == 0) {
+				if(*(argv[i] + 10) != '\0') no_of_samples = atoi(argv[i] + 10);
+				samples_changed = 1;
+                	}  else if (strncmp(argv[i], "--tdelay=", 9) == 0 &&
+					is_number(argv[i] + 9) == 1 &&
+					tdelay_changed == 0) {
+				if(*(argv[i] + 9) != '\0') delay = atoi(argv[i] + 9);
+				tdelay_changed = 1;
+                	} else {
+				fprintf(stderr, "Invalid or duplicate argument(s).\n");
+				return -1;
+			}
 		}
+	} else if (argc <= 0 || 7 <= argc) {
+		fprintf(stderr, "Invalid or duplicate argument(s).\n");
+                return -1;
 	}
+
+	display(no_of_samples, delay);
 	return 0;
 }
-
-// How many arguments can be at most passed to sysmon
-// system and user cannot be used at the same time
-
