@@ -58,7 +58,23 @@ int is_number(char *number) {
 	return result;
 }
 
-void display_memory(int no_of_samples, int delay) {
+void display_memory_update(int sample_no) {
+	// struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
+        // sysinfo(info);
+        // for(int i = 0; i < no_of_samples; i++) {
+        //         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
+        //         float freeram = ((float)(info -> freeram) / (info -> mem_unit)) / 1073741824;
+        //         float totalswap = ((float)(info -> totalswap) / (info -> mem_unit)) / 1073741824;
+        //         float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
+        //         float usedram = totalram - freeram;
+        //         float usedswap = totalswap - freeswap;
+        //         printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totals>
+        //         sleep((unsigned int)delay);
+        // }
+        // free(info);
+}
+
+void display_memory_frame(int no_of_samples, int delay) {
 	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
 	struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
 	getrusage(RUSAGE_SELF, usage);
@@ -66,19 +82,7 @@ void display_memory(int no_of_samples, int delay) {
 	free(usage);
 	print_line();
 	printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
-	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
-	sysinfo(info);
-	for(int i = 0; i < no_of_samples; i++) {
-		float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
-		float freeram = ((float)(info -> freeram) / (info -> mem_unit)) / 1073741824;
-    		float totalswap = ((float)(info -> totalswap) / (info -> mem_unit)) / 1073741824;
-    		float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
-		float usedram = totalram - freeram;
-		float usedswap = totalswap - freeswap;
-		printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
-		sleep((unsigned int)delay);
-	}
-	free(info);
+	for(int i = 0; i < no_of_samples; i++, printf("\n"));
 }
 
 void display_session() {
@@ -109,13 +113,23 @@ void display_sysinfo() {
 	free(buf);
 }
 
-void display(int no_of_samples, int delay) {
-	display_memory(no_of_samples, delay);
-	print_line();
+
+void update(int no_of_samples, int delay) {
+	printf("\e[%d;1H\e[J\e[%d;1H", no_of_samples + 6, no_of_samples + 6); // Clear part of screen
 	display_session();
 	print_line();
 	display_no_of_cores();
 	print_line();
+}
+
+void display(int no_of_samples, int delay) {
+	printf("\e[1;1H\e[2J"); // Clear screen
+	display_memory_frame(no_of_samples, delay);
+	print_line();
+	for(int i = 0; i < no_of_samples; i++) {
+		update(no_of_samples, delay);
+		sleep(1);
+	}
 	display_sysinfo();
 	print_line();
 }
