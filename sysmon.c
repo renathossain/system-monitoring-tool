@@ -58,20 +58,19 @@ int is_number(char *number) {
 	return result;
 }
 
-void display_memory_update(int sample_no) {
-	// struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
-        // sysinfo(info);
-        // for(int i = 0; i < no_of_samples; i++) {
-        //         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
-        //         float freeram = ((float)(info -> freeram) / (info -> mem_unit)) / 1073741824;
-        //         float totalswap = ((float)(info -> totalswap) / (info -> mem_unit)) / 1073741824;
-        //         float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
-        //         float usedram = totalram - freeram;
-        //         float usedswap = totalswap - freeswap;
-        //         printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totals>
-        //         sleep((unsigned int)delay);
-        // }
-        // free(info);
+void display_memory_update(int no_of_samples, int sample_no) {
+	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
+        sysinfo(info);
+        float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
+        float freeram = ((float)(info -> freeram) / (info -> mem_unit)) / 1073741824;
+        float totalswap = ((float)(info -> totalswap) / (info -> mem_unit)) / 1073741824;
+        float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
+        float usedram = totalram - freeram;
+        float usedswap = totalswap - freeswap;
+	printf("\e[%d;1H", sample_no + 5);
+        printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
+        printf("\e[%d;1H", no_of_samples + 6);
+	free(info);
 }
 
 void display_memory_frame(int no_of_samples, int delay) {
@@ -114,8 +113,9 @@ void display_sysinfo() {
 }
 
 
-void update(int no_of_samples, int delay) {
-	printf("\e[%d;1H\e[J\e[%d;1H", no_of_samples + 6, no_of_samples + 6); // Clear part of screen
+void update(int no_of_samples, int sample_no) {
+	printf("\e[%d;1H\e[J", no_of_samples + 6); // Clear part of screen
+	display_memory_update(no_of_samples, sample_no);
 	display_session();
 	print_line();
 	display_no_of_cores();
@@ -127,7 +127,7 @@ void display(int no_of_samples, int delay) {
 	display_memory_frame(no_of_samples, delay);
 	print_line();
 	for(int i = 0; i < no_of_samples; i++) {
-		update(no_of_samples, delay);
+		update(no_of_samples, i);
 		sleep(1);
 	}
 	display_sysinfo();
