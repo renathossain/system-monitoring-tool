@@ -58,6 +58,19 @@ int is_number(char *number) {
 	return result;
 }
 
+void display_title(int no_of_samples, int delay) {
+	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
+        struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
+        getrusage(RUSAGE_SELF, usage);
+        printf(" Memory usage: %ld kilobytes\n", usage -> ru_maxrss);
+        free(usage);
+}
+
+void display_memory_frame(int no_of_samples, int delay) {
+        printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
+        for(int i = 0; i < no_of_samples; i++, printf("\n"));
+}
+
 void display_memory_update(int no_of_samples, int sample_no) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
@@ -71,17 +84,6 @@ void display_memory_update(int no_of_samples, int sample_no) {
         printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
         printf("\e[%d;1H", no_of_samples + 6);
 	free(info);
-}
-
-void display_memory_frame(int no_of_samples, int delay) {
-	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
-	struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
-	getrusage(RUSAGE_SELF, usage);
-        printf(" Memory usage: %ld kilobytes\n", usage -> ru_maxrss);
-	free(usage);
-	print_line();
-	printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
-	for(int i = 0; i < no_of_samples; i++, printf("\n"));
 }
 
 void display_session() {
@@ -113,21 +115,33 @@ void display_sysinfo() {
 }
 
 
-void update(int no_of_samples, int sample_no) {
-	printf("\e[%d;1H\e[J", no_of_samples + 6); // Clear part of screen
-	display_memory_update(no_of_samples, sample_no);
-	display_session();
-	print_line();
-	display_no_of_cores();
-	print_line();
+void update(int no_of_samples, int sample_no, int mode) {
+	if(mode != 2) {
+		printf("\e[%d;1H\e[J", no_of_samples + 6); // Clear part of screen
+	} else {
+		printf("\e[%d;1H\e[J", 4); // Clear part of screen
+	}
+	if(mode != 2) display_memory_update(no_of_samples, sample_no);
+	if(mode != 1) {
+		display_session();
+		print_line();
+	}
+	if(mode != 2) {
+		display_no_of_cores();
+		print_line();
+	}
 }
 
-void display(int no_of_samples, int delay) {
+void display(int no_of_samples, int delay, int mode) {
 	printf("\e[1;1H\e[2J"); // Clear screen
-	display_memory_frame(no_of_samples, delay);
+	display_title(no_of_samples, delay);
 	print_line();
+	if(mode != 2) {
+		display_memory_frame(no_of_samples, delay);
+		print_line();
+	}
 	for(int i = 0; i < no_of_samples; i++) {
-		update(no_of_samples, i);
+		update(no_of_samples, i, mode);
 		sleep(delay);
 	}
 	display_sysinfo();
@@ -173,6 +187,6 @@ int main(int argc, char **argv) {
                 return -1;
 	}
 
-	display(no_of_samples, delay);
+	display(no_of_samples, delay, mode);
 	return 0;
 }
