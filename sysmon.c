@@ -7,7 +7,6 @@
 #include<sys/types.h>
 #include<utmp.h>
 #include<unistd.h>
-#include<ncurses.h>
 
 /*
 Nbr of samples: 10 -- every 1 secs
@@ -58,20 +57,17 @@ int is_number(char *number) {
 	return result;
 }
 
-void display_title(int no_of_samples, int delay) {
-	printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
+void display_title(int no_of_samples, int delay, int sequential, int sample_no) {
+	if(sequential == 0) printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
+	if(sequential == 1) printf(">>> iteration %d\n", sample_no);
         struct rusage *usage = (struct rusage *)malloc(sizeof(struct rusage));
         getrusage(RUSAGE_SELF, usage);
         printf(" Memory usage: %ld kilobytes\n", usage -> ru_maxrss);
         free(usage);
+	print_line();
 }
 
-void display_memory_frame(int no_of_samples, int delay) {
-        printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
-        for(int i = 0; i < no_of_samples; i++, printf("\n"));
-}
-
-void display_memory_update(int no_of_samples, int sample_no) {
+void display_memory(int no_of_samples, int sample_no) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
@@ -80,10 +76,12 @@ void display_memory_update(int no_of_samples, int sample_no) {
         float freeswap = ((float)(info -> freeswap) / (info -> mem_unit)) / 1073741824;
         float usedram = totalram - freeram;
         float usedswap = totalswap - freeswap;
-	printf("\e[%d;1H", sample_no + 5);
-        printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
-        printf("\e[%d;1H", no_of_samples + 6);
+        printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
+	printf("\e[%dB", sample_no);
+	printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
+	printf("\e[%dB", no_of_samples - sample_no - 1);
 	free(info);
+	print_line();
 }
 
 void display_session() {
@@ -95,11 +93,13 @@ void display_session() {
     		users = getutent();
   	}
 	free(users);
+	print_line();
 }
 
 void display_no_of_cores() {
 	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
 	printf(" total cpu use = \n");
+	print_line();
 }
 
 void display_sysinfo() {
@@ -112,40 +112,20 @@ void display_sysinfo() {
         printf("Release = %s\n", buf -> release);
         printf("Architecture = %s\n", buf -> machine);
 	free(buf);
-}
-
-
-void update(int no_of_samples, int sample_no, int mode) {
-	if(mode != 2) {
-		printf("\e[%d;1H\e[J", no_of_samples + 6); // Clear part of screen
-	} else {
-		printf("\e[%d;1H\e[J", 4); // Clear part of screen
-	}
-	if(mode != 2) display_memory_update(no_of_samples, sample_no);
-	if(mode != 1) {
-		display_session();
-		print_line();
-	}
-	if(mode != 2) {
-		display_no_of_cores();
-		print_line();
-	}
-}
-
-void display(int no_of_samples, int delay, int mode) {
-	printf("\e[1;1H\e[2J"); // Clear screen
-	display_title(no_of_samples, delay);
 	print_line();
-	if(mode != 2) {
-		display_memory_frame(no_of_samples, delay);
-		print_line();
-	}
+}
+
+void display(int no_of_samples, int delay, int mode, int sequential) {
+	printf("\e[1;1H\e[2J"); // Clear screen
 	for(int i = 0; i < no_of_samples; i++) {
-		update(no_of_samples, i, mode);
+		if(sequential == 0) printf("\e[1;1H");
+		display_title(no_of_samples, delay, sequential, i);
+		if(mode != 2) display_memory(no_of_samples, i);
+		if(mode != 1) display_session();
+		if(mode != 2) display_no_of_cores();
 		sleep(delay);
 	}
 	display_sysinfo();
-	print_line();
 }
 
 int main(int argc, char **argv) {
@@ -179,14 +159,14 @@ int main(int argc, char **argv) {
 				tdelay_changed = 1;
                 	} else {
 				fprintf(stderr, "Invalid or duplicate argument(s).\n");
-				return -1;
+				return 1;
 			}
 		}
 	} else if (argc <= 0 || 7 <= argc) {
 		fprintf(stderr, "Invalid or duplicate argument(s).\n");
-                return -1;
+                return 1;
 	}
 
-	display(no_of_samples, delay, mode);
+	display(no_of_samples, delay, mode, sequential);
 	return 0;
 }
