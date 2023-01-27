@@ -8,6 +8,48 @@
 #include<utmp.h>
 #include<unistd.h>
 
+#define STRING_LEN 255
+
+struct ram_info {
+	char data[STRING_LEN];
+	struct ram_info *next;
+};
+
+struct ram_info *create_node(char new_data[STRING_LEN]) {
+	struct ram_info* new_node = (struct ram_info *)malloc(sizeof(struct ram_info));
+	if(new_node == NULL) return NULL;
+	strcpy(new_node -> data, new_data);
+	new_node -> next = NULL;
+	return new_node;
+}
+
+struct ram_info *insert_at_tail(struct ram_info *head, struct ram_info *new_node) {
+	if(head == NULL) return new_node;
+	struct ram_info *tmp = head;
+	while(tmp -> next != NULL) {
+		tmp = tmp -> next;
+	}
+	tmp->next = new_node;
+	return head;
+}
+
+void print_list(struct ram_info *head) {
+	while (head != NULL) {
+		printf("%s\n", head -> data);
+		head = head -> next;
+	}
+}
+
+void free_linked_list(struct ram_info *head) {
+	struct ram_info *current = head;
+	struct ram_info *next;
+	while (current != NULL) {
+		next = current -> next;
+		free(current);
+		current = next;
+	}
+}
+
 void print_line() {
 	printf("---------------------------------------\n");
 }
@@ -23,11 +65,11 @@ int is_number(char *number) {
 
 void calculate_cpu_util(unsigned long long *cpu_util) {
 	cpu_util[0] = cpu_util[2]; cpu_util[1] = cpu_util[3];
-	char util_data[1024]; char cpu_name[5];
+	char util_data[STRING_LEN]; char cpu_name[5];
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
 	FILE *file = fopen("/proc/stat", "r");
 	if (file == NULL) fprintf(stderr, "Error opening /proc/stat\n");
-	fgets(util_data, 1024, file);
+	fgets(util_data, STRING_LEN, file);
 	sscanf(util_data, "%s %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu", cpu_name, &user, \
 		&nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice);
 	fclose(file);
@@ -45,7 +87,7 @@ void display_title(int no_of_samples, int delay, int sequential, int sample_no) 
 	print_line();
 }
 
-void display_memory(int no_of_samples, int sample_no) {
+void display_memory(int no_of_samples, int sample_no, int sequential, struct ram_info **head) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
@@ -55,9 +97,17 @@ void display_memory(int no_of_samples, int sample_no) {
         float usedram = totalram - freeram;
         float usedswap = totalswap - freeswap;
         printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
-	printf("\e[%dB", sample_no);
-	printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB\n", usedram, totalram, usedswap, totalswap);
-	printf("\e[%dB", no_of_samples - sample_no - 1);
+	char info_string[STRING_LEN];
+	sprintf(info_string, "%.2f GB / %.2f GB -- %.2f GB / %.2f GB", usedram, totalram, usedswap, totalswap);
+	if(sequential == 0) {
+		*head = insert_at_tail(*head, create_node(info_string));
+		print_list(*head);
+	}
+	if (sequential == 1) {
+		for(int i = 0; i < sample_no; i++, printf("\n"));
+		printf("%s\n", info_string);
+	}
+	for(int i = 0; i < no_of_samples - sample_no - 1; i++, printf("\n"));
 	free(info);
 	print_line();
 }
@@ -76,7 +126,7 @@ void display_session() {
 
 void display_no_of_cores(unsigned long long *cpu_util) {
 	calculate_cpu_util(cpu_util);
-	float util = (float)(cpu_util[2] - cpu_util[0]) / (float)(cpu_util[3] - cpu_util[1]);
+	float util = (float)(cpu_util[2] - cpu_util[0]) / (float)(cpu_util[3] - cpu_util[1]) * 100;
 	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
 	printf(" total cpu use = %.2f%%\n", util);
 	print_line();
@@ -95,19 +145,21 @@ void display_sysinfo() {
 	print_line();
 }
 
-void display(int no_of_samples, int delay, int mode, int sequential) {
+void display(int no_of_samples, int delay, int mode, int sequential, int graphics) {
 	unsigned long long cpu_util[4] = {0, 0, 0, 0}; // prev_busy, prev_total, curr_busy, curr_total
-	calculate_cpu_util(cpu_util);
-	printf("\e[1;1H\e[2J"); // Clear screen
+	calculate_cpu_util(cpu_util); sleep(1);
+	struct ram_info *head = NULL;
+	printf("\033c\033[1H"); // Clear screen
 	for(int i = 0; i < no_of_samples; i++) {
-		if(sequential == 0) printf("\e[1;1H");
+		if(sequential == 0) printf("\033c\033[1H");
 		display_title(no_of_samples, delay, sequential, i);
-		if(mode != 2) display_memory(no_of_samples, i);
+		if(mode != 2) display_memory(no_of_samples, i, sequential, &head);
 		if(mode != 1) display_session();
 		if(mode != 2) display_no_of_cores(cpu_util);
 		sleep(delay);
 	}
 	display_sysinfo();
+	free_linked_list(head);
 }
 
 int main(int argc, char **argv) {
@@ -135,12 +187,16 @@ int main(int argc, char **argv) {
                 	sequential = 1;
         	}  else if (samples_changed == 0 &&
 				strncmp(argv[i], "--samples=", 10) == 0 &&
-				is_number(argv[i] + 10) == 1) {
+				is_number(argv[i] + 10) == 1 &&
+				0 <= atoi(argv[i] + 10) &&
+				atoi(argv[i] + 10) <= 2147483647) {
 			if(*(argv[i] + 10) != '\0') no_of_samples = atoi(argv[i] + 10);
 			samples_changed = 1;
         	}  else if (tdelay_changed == 0 &&
 				strncmp(argv[i], "--tdelay=", 9) == 0 &&
-				is_number(argv[i] + 9) == 1) {
+				is_number(argv[i] + 9) == 1 &&
+				0 <= atoi(argv[i] + 9) &&
+				atoi(argv[i] + 9) <= 2147483647) {
 			if(*(argv[i] + 9) != '\0') delay = atoi(argv[i] + 9);
 			tdelay_changed = 1;
         	} else {
@@ -149,6 +205,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	display(no_of_samples, delay, mode, sequential);	
+	display(no_of_samples, delay, mode, sequential, graphics);
 	return 0;
 }
