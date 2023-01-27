@@ -8,19 +8,21 @@
 #include<utmp.h>
 #include<unistd.h>
 
-#define STRING_LEN 255
+#define STRING_LEN 256
 
 struct info_node {
 	char mem_data[STRING_LEN];
 	float cpu_data;
+	float used_ram;
 	struct info_node *next;
 };
 
-struct info_node *create_node(char *mem_data, float cpu_data) {
+struct info_node *create_node(char *mem_data, float cpu_data, float used_ram) {
 	struct info_node *new_node = (struct info_node *)malloc(sizeof(struct info_node));
 	if(new_node == NULL) return NULL;
 	strcpy(new_node -> mem_data, mem_data);
 	new_node -> cpu_data = cpu_data;
+	new_node -> used_ram = used_ram;
 	new_node -> next = NULL;
 	return new_node;
 }
@@ -62,6 +64,17 @@ void print_cpu_graphics(struct info_node *head, int no_of_samples, int sample_no
 	for(int i = 0; i < no_of_samples - sample_no - 1; i++, printf("\n"));
 }
 
+float ram_usage(struct info_node *head, int index) {
+    struct info_node *current = head;
+    for (int i = 0; i < index; i++) {
+        if (current == NULL) {
+            return (float)-1;
+        }
+        current = current -> next;
+    }
+    return current -> used_ram;
+}
+
 void print_line() {
 	printf("---------------------------------------\n");
 }
@@ -99,7 +112,7 @@ void display_title(int no_of_samples, int delay, int sequential, int sample_no) 
 	print_line();
 }
 
-void display_memory(int no_of_samples, int sample_no, int sequential, struct info_node **head) {
+void display_memory(int no_of_samples, int sample_no, int sequential, struct info_node **head, int graphics) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
@@ -110,9 +123,31 @@ void display_memory(int no_of_samples, int sample_no, int sequential, struct inf
         float usedswap = totalswap - freeswap;
         printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
 	char info_string[STRING_LEN];
-	sprintf(info_string, "%.2f GB / %.2f GB -- %.2f GB / %.2f GB", usedram, totalram, usedswap, totalswap);
+	char graphics_string[STRING_LEN / 2] = "";
+	if(graphics == 1) {
+		float change = 0;
+		if(sample_no > 0) {
+			change = usedram / ram_usage(*head, sample_no - 1) - 1;
+		}
+		strcat(graphics_string, "   |");
+		if(change >= 0) {
+			for(int i = 0; i < (int)(change * 100); i++, strcat(graphics_string, "#"));
+			if(change == 0) {
+				strcat(graphics_string, "o");
+			} else {
+				strcat(graphics_string, "*");
+			}
+		} else {
+			for(int i = 0; i < -(int)(change * 100); i++, strcat(graphics_string, ":"));
+			strcat(graphics_string, "@");
+		}
+		char extra_info[20];
+		sprintf(extra_info, " %.2f (%.2f)", change, usedram);
+		strcat(graphics_string, extra_info);
+	}
+	sprintf(info_string, "%.2f GB / %.2f GB -- %.2f GB / %.2f GB%s", usedram, totalram, usedswap, totalswap, graphics_string);
+	*head = insert_at_tail(*head, create_node(info_string, (float)0, usedram));
 	if(sequential == 0) {
-		*head = insert_at_tail(*head, create_node(info_string, (float)0));
 		print_list(*head);
 	}
 	if (sequential == 1) {
@@ -142,7 +177,7 @@ void display_no_of_cores(unsigned long long *cpu_util, int graphics, struct info
 	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
 	printf(" total cpu use = %.2f%%\n", util);
 	if(graphics == 1) {
-		*head = insert_at_tail(*head, create_node("", util));
+		*head = insert_at_tail(*head, create_node("", util, (float)0));
 		print_cpu_graphics(*head, no_of_samples, sample_no);
 	}
 	print_line();
@@ -170,7 +205,7 @@ void display(int no_of_samples, int delay, int mode, int sequential, int graphic
 	for(int i = 0; i < no_of_samples; i++) {
 		if(sequential == 0) printf("\033c\033[1H");
 		display_title(no_of_samples, delay, sequential, i);
-		if(mode != 2) display_memory(no_of_samples, i, sequential, &mem_list);
+		if(mode != 2) display_memory(no_of_samples, i, sequential, &mem_list, graphics);
 		if(mode != 1) display_session();
 		if(mode != 2) display_no_of_cores(cpu_util, graphics, &cpu_list, no_of_samples, i);
 		sleep(delay);
@@ -217,7 +252,7 @@ int main(int argc, char **argv) {
 				atoi(argv[i] + 9) <= 2147483647) {
 			if(*(argv[i] + 9) != '\0') delay = atoi(argv[i] + 9);
 			tdelay_changed = 1;
-        	} else if (samples_changed == 0 && tdelay_changed == 0 && 1 <= i && i <= 4 &&
+        	} else if (samples_changed == 0 && tdelay_changed == 0 && 1 <= i && i <= 4 && i < argc - 1 &&
 				is_number(argv[i]) == 1 && is_number(argv[i + 1]) == 1 &&
 				0 <= atoi(argv[i]) && atoi(argv[i]) <= 2147483647 &&
 				0 <= atoi(argv[i + 1]) && atoi(argv[i + 1]) <= 2147483647) {
