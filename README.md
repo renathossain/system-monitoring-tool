@@ -59,7 +59,7 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
  * `void display_title(int no_of_samples, int delay, int sequential, int sample_no)` displays title with no_of_samples, delay, iteration, app memory usage
  * `void display_memory(int no_of_samples, int sample_no, int sequential, int graphics, struct info_node *head, struct info_node *current)` displays RAM and swap usage with option for graphics, sequential.
  * `void display_session()` displays the current users using the system using setutent and getutent.
- * `void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current)` displays number of cores and cpu utilization, with option for graphics.
+ * `void display_cpu(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current)` displays number of cores and cpu utilization, with option for graphics.
  * `void display_sysinfo()` displays system information using uname.
  * `void display(int no_of_samples, int delay, int mode, int sequential, int graphics)` driver function of the program.
  * `int main(int argc, char **argv)` - If user input is valid, calls display() driver function with appropriate argument values otherwise returns an "Invalid or duplicate argument(s)." error message.

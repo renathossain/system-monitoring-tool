@@ -188,7 +188,7 @@ void display_session() {
 }
 
 // Displays number of cores and cpu utilization, with option for graphics
-void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current) {
+void display_cpu(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current) {
 	calculate_cpu_util(current);
 	if(head != current) {
 		current -> cpu_usage = (float)(current -> cpu_busy - current -> prev -> cpu_busy) \
@@ -226,7 +226,7 @@ void display(int no_of_samples, int delay, int mode, int sequential, int graphic
 		display_title(no_of_samples, delay, sequential, i);
 		if(mode != 2) display_memory(no_of_samples, i, sequential, graphics, head, current);
 		if(mode != 1) display_session();
-		if(mode != 2) display_no_of_cores(graphics, no_of_samples, i, head, current);
+		if(mode != 2) display_cpu(graphics, no_of_samples, i, head, current);
 		sleep(delay);
 	}
 	display_sysinfo();
