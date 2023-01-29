@@ -33,7 +33,7 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
 
 ### 3rd-party libaries
  * To get information about current memory usage, `sysinfo` from `sys/sysinfo.h>` was used.
- * To get CPU utilization data, `/proc/stat` was read using fgets and parsed with sscanf to obtain various CPU utilization numbers, which were added to get cpu_busy and cpu_total.
+ * To get CPU utilization data, `/proc/stat` was read using `fgets` and parsed with `sscanf` to obtain various CPU utilization numbers, which were added and stored in `current -> cpu_busy` and `current -> cpu_total`.
  * To get the app's memory usage `getrusage` from `sys/resource.h` was used.
  * To get list of users `setutent` and `getutent`from `utmp.h` was used.
  * To get number of CPU cores `sysconf(_SC_NPROCESSORS_ONLN)` from `unistd.h` was used.
@@ -41,8 +41,9 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
 
 ### Other
  * `printf("\033c\033[1H");` - Control Sequence Introducer (CSI) was used to clear the terminal screen and reset the cursor position back to 1,1.
- * Defensive programming was done to make sure that user input is valid - i.e. checking all characters are digits 0-9 before using `atoi` to convert a string to an int.
- * Each function had one responsibility - e.g. one function displays memory usage, one function displays system information, one function retrieves CPU utilization
+ * Defensive programming was done to make sure that user input is valid - i.e. checking all characters are digits 0-9 before using `atoi` to convert the user string to an int.
+ * Each function had one responsibility - e.g. one function displays memory usage, one function displays system information, one function retrieves CPU utilization.
+ * Read the documentation of 3rd-party functions to understand how to use them. E.g. - `int uname(struct utsname *buf)` would store kernel info data in the struct `buf` and I could access the operating system version using `buf -> version`.
 
 ## Overview of functions
 
