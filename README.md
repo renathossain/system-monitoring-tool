@@ -27,7 +27,7 @@ Report different metrics about the system and resource utilization.
 
 ### Doubly-linked list
 To store the RAM and CPU data, a doubly-linked list was used, for the following reasons:
- * To store an arbitrary no of samples, in the order the samples were generated, and print them in that order.
+ * To store an arbitrary no of samples, in the order the samples were generated, and to print them in that order.
  * At each iteration, a new sample can be added at the tail of the list with O(1) complexity instead of O(N) of a linked list.
  * The previous sample node can easily be accessed with `current -> prev` which is crucial for calculating CPU usage and RAM change in memory graphics.
 
