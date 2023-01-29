@@ -17,12 +17,13 @@ struct info_node {
 	float total_swap;
 	unsigned long long cpu_busy;
 	unsigned long long cpu_total;
+	float cpu_usage;
 	struct info_node *prev;
 	struct info_node *next;
 };
 
 struct info_node *create_new_node(float used_ram, float total_ram, float used_swap, float total_swap, \
-		unsigned long long cpu_busy, unsigned long long cpu_total) {
+		unsigned long long cpu_busy, unsigned long long cpu_total, float cpu_usage) {
 	struct info_node *new_node = (struct info_node *) malloc(sizeof(struct info_node));
 	if (new_node == NULL) {
 		return NULL;
@@ -33,6 +34,7 @@ struct info_node *create_new_node(float used_ram, float total_ram, float used_sw
 	new_node -> total_swap = total_swap;
 	new_node -> cpu_busy = cpu_busy;
 	new_node -> cpu_total = cpu_total;
+	new_node -> cpu_usage = cpu_usage;
 	new_node -> prev = NULL;
 	new_node -> next = NULL;
 	return new_node;
@@ -54,14 +56,6 @@ void insert_at_tail(struct info_node **head, struct info_node **tail, struct inf
 	(*tail) -> next = new_node;
 	new_node -> prev = *tail;
 	*tail = new_node;
-}
-
-void print_list(struct info_node *head) {
-	while (head != NULL) {
-		printf("used_ram: %f, total_ram: %f, used_swap: %f, total_swap: %f, cpu_busy: %llu, cpu_total: %llu\n",
-			head -> used_ram, head -> total_ram, head -> used_swap, head -> total_swap, head -> cpu_busy, head -> cpu_total);
-		head = head -> next;
-	}
 }
 
 void free_list(struct info_node *head) {
@@ -86,7 +80,7 @@ int is_number(char *number) {
 	return result;
 }
 
-void retrieve_meminfo(struct info_node *head, struct info_node *current) {
+void retrieve_meminfo(struct info_node *current) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
         float totalram = ((float)(info -> totalram) / (info -> mem_unit)) / 1073741824;
@@ -100,9 +94,20 @@ void retrieve_meminfo(struct info_node *head, struct info_node *current) {
 	free(info);
 }
 
-void print_memory(struct info_node *node) {
-	printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB", node -> used_ram, node -> total_ram, \
-		node -> used_swap, node -> total_swap);
+void print_memory_graphics(struct info_node *head, struct info_node *current) {
+	float change = 0;
+	if(head != current) change = (current -> used_ram / current -> prev -> used_ram) - 1;
+	printf("   |");
+	for(int i = 0; i < (int)(change * 100) || i < -(int)(change * 100); i++, (change >= 0) ? printf("#") : printf(":"));
+	(change >= 0) ? ((change == 0) ? printf("o") : printf("*")) : printf("@");
+	printf(" %.2f (%.2f)", change, current -> used_ram);
+}
+
+void print_memory(int graphics, struct info_node *head, struct info_node *current) {
+	printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB", current -> used_ram, current -> total_ram, \
+		current -> used_swap, current -> total_swap);
+	if(graphics == 1) print_memory_graphics(head, current);
+	printf("\n");
 }
 
 void calculate_cpu_util(struct info_node *current) {
@@ -118,6 +123,16 @@ void calculate_cpu_util(struct info_node *current) {
 	current -> cpu_total = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
 }
 
+void print_cpu_graphics(struct info_node *head, int no_of_samples, int sample_no) {
+	while (head != NULL) {
+		printf("         ");
+		for(int i = 0; i < (int)((head -> cpu_usage) / 3); i++, printf("|"));
+		printf("| %.2f\n", head -> cpu_usage);
+		head = head -> next;
+	}
+	for(int i = 0; i < no_of_samples - sample_no - 1; i++, printf("\n"));
+}
+
 void display_title(int no_of_samples, int delay, int sequential, int sample_no) {
 	if(sequential == 0) printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
 	if(sequential == 1) printf(">>> iteration %d\n", sample_no);
@@ -129,20 +144,18 @@ void display_title(int no_of_samples, int delay, int sequential, int sample_no) 
 }
 
 void display_memory(int no_of_samples, int sample_no, int sequential, int graphics, struct info_node *head, struct info_node *current) {
-	retrieve_meminfo(head, current);
+	retrieve_meminfo(current);
         printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
 	if(sequential == 0) {
 		struct info_node *tmp = head;
 		while(tmp != NULL) {
-			print_memory(tmp); 
-			printf("\n");
+			print_memory(graphics, head, tmp);
 			tmp = tmp -> next;
 		}
 	}
 	if(sequential == 1) {
 		for(int i = 0; i < sample_no; i++, printf("\n"));
-		print_memory(current); 
-		printf("\n");
+		print_memory(graphics, head, current);
 	}
 	for(int i = 0; i < no_of_samples - sample_no - 1; i++, printf("\n"));	
 	print_line();
@@ -162,13 +175,13 @@ void display_session() {
 
 void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current) {
 	calculate_cpu_util(current);
-	float util = 0;
 	if(head != current) {
-		util = (float)(current -> cpu_busy - current -> prev -> cpu_busy) \
+		current -> cpu_usage = (float)(current -> cpu_busy - current -> prev -> cpu_busy) \
 			/ (float)(current -> cpu_total - current -> prev -> cpu_total) * 100;
 	}
 	printf("Number of cores: %ld\n", sysconf(_SC_NPROCESSORS_ONLN));
-	printf(" total cpu use = %.2f%%\n", util);
+	printf(" total cpu use = %.2f%%\n", current -> cpu_usage);
+	if(graphics == 1) print_cpu_graphics(head, no_of_samples, sample_no);
 	print_line();
 }
 
@@ -190,7 +203,7 @@ void display(int no_of_samples, int delay, int mode, int sequential, int graphic
 	struct info_node *tail = NULL;
 	printf("\033c\033[1H");
 	for(int i = 0; i < no_of_samples; i++) {
-		struct info_node *current = create_new_node(0, 0, 0, 0, 0, 0);
+		struct info_node *current = create_new_node(0, 0, 0, 0, 0, 0, 0);
 		insert_at_tail(&head, &tail, current);
 		if(sequential == 0) printf("\033c\033[1H");
 		display_title(no_of_samples, delay, sequential, i);
@@ -200,7 +213,6 @@ void display(int no_of_samples, int delay, int mode, int sequential, int graphic
 		sleep(delay);
 	}
 	display_sysinfo();
-	print_list(head);
 	free_list(head);
 }
 
