@@ -52,4 +52,14 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
  * `void print_line()` - prints a line of '-' symbols to separate different sections of the program.
  * `int is_number(char *number)` - checks whether all characters in the string are 0-9, by making sure the ASCII value is between 48 and 57 inclusive.
  * `void retrieve_meminfo(struct info_node *current)` retrieve information about memory and store it in the appropriate fields of the current node of the list.
- * 
+ * `void print_memory_graphics(struct info_node *head, struct info_node *current)` prints out memory graphical output, called only when `--graphics` flag is used.
+ * `void print_memory(int graphics, struct info_node *head, struct info_node *current)` prints 1 line of memory information using data from 1 node of list.
+ * `void calculate_cpu_util(struct info_node *current)` calculates CPU utilization and stores it in current -> cpu_busy and current -> cpu_total.
+ * `void print_cpu_graphics(struct info_node *head, int no_of_samples, int sample_no)` prints CPU utililization graphics, called only when `--graphics` flag is used.
+ * `void display_title(int no_of_samples, int delay, int sequential, int sample_no)` displays title with no_of_samples, delay, iteration, app memory usage
+ * `void display_memory(int no_of_samples, int sample_no, int sequential, int graphics, struct info_node *head, struct info_node *current)` displays RAM and swap usage with option for graphics, sequential.
+ * `void display_session()` displays the current users using the system using setutent and getutent.
+ * `void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current)` displays number of cores and cpu utilization, with option for graphics.
+ * `void display_sysinfo()` displays system information using uname.
+ * `void display(int no_of_samples, int delay, int mode, int sequential, int graphics)` driver function of the program.
+ * `int main(int argc, char **argv)` - If user input is valid, calls display() driver function with appropriate argument values otherwise returns an "Invalid or duplicate argument(s)." error message.
