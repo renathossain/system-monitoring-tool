@@ -10,6 +10,7 @@
 
 #define STRING_LEN 256
 
+// Stores RAM and CPU data
 struct info_node {
 	float used_ram;
 	float total_ram;
@@ -22,6 +23,7 @@ struct info_node {
 	struct info_node *next;
 };
 
+// Creates a new node of doubly-linked list 
 struct info_node *create_new_node(float used_ram, float total_ram, float used_swap, float total_swap, \
 		unsigned long long cpu_busy, unsigned long long cpu_total, float cpu_usage) {
 	struct info_node *new_node = (struct info_node *) malloc(sizeof(struct info_node));
@@ -40,6 +42,7 @@ struct info_node *create_new_node(float used_ram, float total_ram, float used_sw
 	return new_node;
 }
 
+// Performs the insertion of new_node at the tail of the list with O(1) complexity
 void insert_at_tail(struct info_node **head, struct info_node **tail, struct info_node *new_node) {
 	if(new_node == NULL) return;
 	if (*head == NULL && *tail == NULL) {
@@ -58,6 +61,7 @@ void insert_at_tail(struct info_node **head, struct info_node **tail, struct inf
 	*tail = new_node;
 }
 
+// Frees the memory used by the list
 void free_list(struct info_node *head) {
     struct info_node *tmp;
     while (head != NULL) {
@@ -67,10 +71,12 @@ void free_list(struct info_node *head) {
     }
 }
 
+// Prints a line of '-' symbols to separate different sections of the program
 void print_line() {
 	printf("---------------------------------------\n");
 }
 
+// Checks whether all characters in the string are 0-9
 int is_number(char *number) {
 	int result = 1;
 	while(*number != '\0') {
@@ -80,6 +86,7 @@ int is_number(char *number) {
 	return result;
 }
 
+// Retrieve information about memory and store it in the current node
 void retrieve_meminfo(struct info_node *current) {
 	struct sysinfo *info = (struct sysinfo *)malloc(sizeof(struct sysinfo));
         sysinfo(info);
@@ -94,6 +101,7 @@ void retrieve_meminfo(struct info_node *current) {
 	free(info);
 }
 
+// Prints out memory graphical output, called only when `--graphics` flag is used
 void print_memory_graphics(struct info_node *head, struct info_node *current) {
 	float change = 0;
 	if(head != current) change = (current -> used_ram / current -> prev -> used_ram) - 1;
@@ -103,6 +111,7 @@ void print_memory_graphics(struct info_node *head, struct info_node *current) {
 	printf(" %.2f (%.2f)", change, current -> used_ram);
 }
 
+// Prints 1 line of memory information
 void print_memory(int graphics, struct info_node *head, struct info_node *current) {
 	printf("%.2f GB / %.2f GB -- %.2f GB / %.2f GB", current -> used_ram, current -> total_ram, \
 		current -> used_swap, current -> total_swap);
@@ -110,6 +119,7 @@ void print_memory(int graphics, struct info_node *head, struct info_node *curren
 	printf("\n");
 }
 
+// Calculates CPU utilization and stores it in current -> cpu_busy and current -> cpu_total
 void calculate_cpu_util(struct info_node *current) {
 	char util_data[STRING_LEN]; char cpu_name[5];
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
@@ -123,6 +133,7 @@ void calculate_cpu_util(struct info_node *current) {
 	current -> cpu_total = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
 }
 
+// Prints CPU utililization graphics, called only when `--graphics` flag is used
 void print_cpu_graphics(struct info_node *head, int no_of_samples, int sample_no) {
 	while (head != NULL) {
 		printf("         ");
@@ -133,6 +144,7 @@ void print_cpu_graphics(struct info_node *head, int no_of_samples, int sample_no
 	for(int i = 0; i < no_of_samples - sample_no - 1; i++, printf("\n"));
 }
 
+// Displays title with no_of_samples, delay, iteration, app memory usage
 void display_title(int no_of_samples, int delay, int sequential, int sample_no) {
 	if(sequential == 0) printf("Nbr of samples: %d -- every %d secs\n", no_of_samples, delay);
 	if(sequential == 1) printf(">>> iteration %d\n", sample_no);
@@ -143,6 +155,7 @@ void display_title(int no_of_samples, int delay, int sequential, int sample_no) 
 	print_line();
 }
 
+// Displays RAM and swap usage with option for graphics, sequential
 void display_memory(int no_of_samples, int sample_no, int sequential, int graphics, struct info_node *head, struct info_node *current) {
 	retrieve_meminfo(current);
         printf("### Memory ### (Phys.Used/Tot -- Virtual Used/Tot)\n");
@@ -161,6 +174,7 @@ void display_memory(int no_of_samples, int sample_no, int sequential, int graphi
 	print_line();
 }
 
+// Displays the current users using the system using setutent and getutent
 void display_session() {
 	printf("### Sessions/users ###\n");
 	setutent();
@@ -173,6 +187,7 @@ void display_session() {
 	print_line();
 }
 
+// Displays number of cores and cpu utilization, with option for graphics
 void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct info_node *head, struct info_node *current) {
 	calculate_cpu_util(current);
 	if(head != current) {
@@ -185,6 +200,7 @@ void display_no_of_cores(int graphics, int no_of_samples, int sample_no, struct 
 	print_line();
 }
 
+// Displays system information using uname
 void display_sysinfo() {
 	struct utsname *buf = (struct utsname *)malloc(sizeof(struct utsname));
         uname(buf);
@@ -198,6 +214,7 @@ void display_sysinfo() {
 	print_line();
 }
 
+// Driver function of the program
 void display(int no_of_samples, int delay, int mode, int sequential, int graphics) {
 	struct info_node *head = NULL;
 	struct info_node *tail = NULL;
@@ -216,6 +233,7 @@ void display(int no_of_samples, int delay, int mode, int sequential, int graphic
 	free_list(head);
 }
 
+// If user input is valid, calls display() driver function with appropriate argument values
 int main(int argc, char **argv) {
 	int mode = 0; //0 - default, 1 - system, 2 - user
 	int graphics = 0; //0 - no graphics (default), 1 - use graphics
