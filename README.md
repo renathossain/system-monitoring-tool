@@ -25,5 +25,24 @@ Report different metrics about the system and resource utilization.
 
 ## How did I solve the problem
 
+### Doubly-linked list
+To store the RAM and CPU data, a doubly-linked list was used, for the following reasons:
+ * To store an arbitrary no of samples, in the order the samples were generated, and print them in that order.
+ * At each iteration, a new sample can be added at the tail of the list with O(1) complexity instead of O(N) of a linked list.
+ * The previous sample node can easily be accessed with `current -> prev` which is crucial for calculating CPU usage and RAM change in memory graphics.
+
+### 3rd-party libaries
+ * To get information about current memory usage, `sysinfo` from `sys/sysinfo.h>` was used.
+ * To get CPU utilization data, `/proc/stat` was read using fgets and parsed with sscanf to obtain various CPU utilization numbers, which were added to get cpu_busy and cpu_total.
+ * To get the app's memory usage `getrusage` from `sys/resource.h` was used.
+ * To get list of users `setutent` and `getutent`from `utmp.h` was used.
+ * To get number of CPU cores `sysconf(_SC_NPROCESSORS_ONLN)` from `unistd.h` was used.
+ * To get system information `uname` from `sys/utsname.h` was used.
+
+### Other
+ * `printf("\033c\033[1H");` - Control Sequence Introducer (CSI) was used to clear the terminal screen and reset the cursor position back to 1,1.
+ * Defensive programming was done to make sure that user input is valid - i.e. checking all characters are digits 0-9 before using `atoi` to convert a string to an int.
+ * Each function had one responsibility - e.g. one function displays memory usage, one function displays system information, one function retrieves CPU utilization
+
 ## Overview of functions
 
