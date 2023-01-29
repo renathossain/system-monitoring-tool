@@ -11,17 +11,12 @@ Report different metrics about the system and resource utilization.
     * Number of cpu cores
 
 ## How to use the program
-To compile the code, run the following: `gcc -std=c99 -Wall -o sysmon sysmon.c`.
-
-To running the command with no args (produces 10 samples 1 sec apart): `./sysmon`.
-
-To change the number of samples, use the `--samples=N` flag. For e.g. - `./sysmon --samples=20`.
-
-To change the delay between the samples displayed, use the `--tdelay=T` flag. For e.g. - `./sysmon --tdelay=5`.
-
-Passing `./sysmon --samples= --tdelay=` with no numbers results in the default setting of 10 samples 1 sec apart.
-
-Additionally, you can pass 2 numbers separated by a space to set the `samples` and `tdelay` values. For e.g. - `./sysmon 25 3` means 25 samples 3 sec apart.
+ * To compile the code, run the following: `gcc -std=c99 -Wall -o sysmon sysmon.c`.
+ * To running the command with no args (produces 10 samples 1 sec apart): `./sysmon`.
+ * To change the number of samples, use the `--samples=N` flag. For e.g. - `./sysmon --samples=20`.
+ * To change the delay between the samples displayed, use the `--tdelay=T` flag. For e.g. - `./sysmon --tdelay=5`.
+ * Passing `./sysmon --samples= --tdelay=` with no numbers results in the default setting of 10 samples 1 sec apart.
+ * Additionally, you can pass 2 numbers separated by a space to set the `samples` and `tdelay` values. For e.g. - `./sysmon 25 3` means 25 samples 3 sec apart.
 
 To only display system information use the `--system` flag. For e.g. - `./sysmon --system`.
 
