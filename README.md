@@ -46,4 +46,4 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
  * Read the documentation of 3rd-party functions to understand how to use them. E.g. - `int uname(struct utsname *buf)` would store kernel info data in the struct `buf` and I could access the operating system version using `buf -> version`.
 
 ## Overview of functions
-
+ * `struct info_node *create_new_node(float used_ram, float total_ram, float used_swap, float total_swap, unsigned long long cpu_busy, unsigned long long cpu_total, float cpu_usage)` creates a new node of doubly-linked list to store RAM and CPU data.
