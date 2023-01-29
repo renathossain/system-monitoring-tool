@@ -47,3 +47,9 @@ To store the RAM and CPU data, a doubly-linked list was used, for the following 
 
 ## Overview of functions
  * `struct info_node *create_new_node(float used_ram, float total_ram, float used_swap, float total_swap, unsigned long long cpu_busy, unsigned long long cpu_total, float cpu_usage)` creates a new node of doubly-linked list to store RAM and CPU data.
+ * `void insert_at_tail(struct info_node **head, struct info_node **tail, struct info_node *new_node)` - performs the insertion of new_node at the tail of the list with O(1) complexity. Note that the head and tail of the list are given as double pointers.
+ * `void free_list(struct info_node *head)` - frees the memory used by the list by traversing it once.
+ * `void print_line()` - prints a line of '-' symbols to separate different sections of the program.
+ * `int is_number(char *number)` - checks whether all characters in the string are 0-9, by making sure the ASCII value is between 48 and 57 inclusive.
+ * `void retrieve_meminfo(struct info_node *current)` retrieve information about memory and store it in the appropriate fields of the current node of the list.
+ * 
